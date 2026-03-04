@@ -48,13 +48,9 @@ python manage.py createsuperuser
 
 echo.
 echo [5/6] Loading sensor data...
-set /p load="Do you want to load sensor_data.csv into the database? (y/n): "
+set /p load="Do you want to load sensor data into the database? (y/n): "
 if /i "%load%"=="y" (
-    if exist "sensor_data.csv" (
-        python manage.py load_csv_data --csv sensor_data.csv --clear
-    ) else (
-        python manage.py load_csv_data --csv sensor_data_sample.csv --clear
-    )
+    python manage.py load_csv_data --clear
     echo Sensor data loaded successfully
 )
 

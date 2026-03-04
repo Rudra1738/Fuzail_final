@@ -28,8 +28,8 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument(
-            '--csv', type=str, default='sensor_data.csv',
-            help='Path to CSV file (default: sensor_data.csv)'
+            '--csv', type=str, default='sensor_data_sample.csv',
+            help='Path to CSV file (default: sensor_data_sample.csv)'
         )
         parser.add_argument(
             '--clear', action='store_true',
