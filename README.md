@@ -1,548 +1,243 @@
-# Environmental Sensor Monitoring System
+# Fuzail — Environmental Sensor Monitoring System
 
-A real-time sensor monitoring dashboard for 12 environmental sensors streaming data at 60Hz.
+A full-stack real-time dashboard for monitoring 12 environmental sensors across 5 physical sensor modules. Built with Django REST Framework and React + Plotly.js.
 
-## System Overview
+## Sensors
 
-**Complete Stack:**
-- **Backend:** Django REST Framework + Django Channels + WebSockets
-- **Frontend:** React (Vite) + Plotly.js
-- **Database:** SQLite (development) → PostgreSQL (production)
-- **Task Queue:** Celery + Redis
-- **Real-time:** WebSockets via Django Channels
+The system reads from **5 physical sensors** producing **12 data channels**:
 
-**Data Flow:**
+| # | Channel | Sensor | Unit | Range |
+|---|---------|--------|------|-------|
+| 1 | Light Intensity | BH1750FVI | lx | 0 – 65,535 |
+| 2 | Temperature | BME688 | °C | -40 – 85 |
+| 3 | Humidity | BME688 | %RH | 0 – 100 |
+| 4 | Pressure | BME688 | Pa | 30,000 – 110,000 |
+| 5 | Gas Resistance | BME688 | Ω | 1,000 – 500,000 |
+| 6 | IAQ Index | BME688 | index | 0 – 500 |
+| 7 | CO | MiCS-6814 | ppm | 0 – 1,000 |
+| 8 | NO₂ | MiCS-6814 | ppm | 0 – 10 |
+| 9 | NH₃ | MiCS-6814 | ppm | 0 – 300 |
+| 10 | TVOC | ZMOD4410 | ppb | 0 – 5,000 |
+| 11 | eCO₂ | ZMOD4410 | ppm | 400 – 5,000 |
+| 12 | PM2.5 | SEN5x | µg/m³ | 0 – 1,000 |
+
+All ranges and units are derived from the manufacturer datasheets (included in `sensor_schematics/`).
+
+## Tech Stack
+
+| Layer | Technology |
+|-------|-----------|
+| Backend | Django 5 + Django REST Framework |
+| Frontend | React 19 (Vite) + Plotly.js |
+| Database | SQLite (dev) / PostgreSQL (prod) |
+| Real-time | API polling (2s interval) + WebSocket infrastructure |
+| Task Queue | Celery + Redis (for production aggregation) |
+
+## Quick Start
+
+### Prerequisites
+
+- Python 3.10+
+- Node.js 18+
+
+### One-Click Setup (Windows)
+
 ```
-Raspberry Pi (60Hz × 12 sensors)
-    ↓ HTTP POST batches
-Django REST API (bulk insert)
-    ↓
-SQLite Database (raw 60Hz data)
-    ↓ Celery tasks (aggregation)
-1-sec, 1-min, 1-hour summaries
-    ↓ WebSocket broadcast
-React Dashboard (real-time updates)
+setup.bat      # First-time: venv, dependencies, migrations, data load
+start.bat      # Start Django + React dev servers
+stop.bat       # Stop both servers
 ```
 
-## Features Implemented
-
-### ✅ Backend (100% Complete)
-
-**Database Models:**
-- `SensorReading` - Raw 60Hz data (7-day retention)
-- `SensorAggregated1Sec` - 1-second summaries (30-day retention)
-- `SensorAggregated1Min` - 1-minute summaries (1-year retention)
-- `SensorAggregated1Hour` - 1-hour summaries (permanent)
-- `Anomaly` - Anomaly detection and tracking
-
-**REST API Endpoints:**
-- `POST /api/sensors/ingest/` - Batch insert sensor readings
-- `GET /api/sensors/list/` - List all 12 sensors with status
-- `GET /api/sensors/{id}/live/` - Last 60 seconds of data
-- `GET /api/sensors/{id}/history/` - Historical data (auto-aggregation)
-- `GET /api/sensors/anomalies/` - Anomaly alerts
-
-**WebSocket:**
-- `ws://localhost:8000/ws/sensors/` - Real-time sensor data stream
-
-**Celery Tasks (Automated):**
-- `aggregate_1sec_data` - Runs every 1 second
-- `aggregate_1min_data` - Runs every 1 minute
-- `aggregate_1hour_data` - Runs every 1 hour
-- `cleanup_old_readings` - Runs daily at 2 AM
-- `detect_anomalies` - Statistical anomaly detection
-- `check_sensor_dropouts` - Monitor sensor connectivity
-
-**Management Commands:**
-- `python manage.py seed_sensors` - Generate historical test data
-- `python manage.py simulate_sensor_stream` - Simulate 60Hz sensor stream
-- `python manage.py cleanup_old_readings` - Manual data cleanup
-
-### ⏳ Frontend (In Progress)
-
-**Completed:**
-- ✅ React app with Vite
-- ✅ Design system implementation (dark theme)
-- ✅ CSS variables and styling foundation
-- ✅ Dependencies installed (Plotly, Axios, React Router)
-
-**TODO:**
-- API service layer and state management
-- Component library (SensorCard, Charts, Badges)
-- Live Dashboard page (12 sensors + sparklines)
-- Historical Analytics page (Plotly charts + filters)
-- WebSocket integration for real-time updates
-
----
-
-## Quick Start Guide
-
-### 🚀 One-Click Setup (Recommended)
-
-For the fastest setup experience, use the automated scripts:
-
-1. **First time setup:** Double-click `setup.bat`
-   - Creates virtual environment
-   - Installs all dependencies
-   - Sets up database
-   - Creates admin user
-   - Seeds test data
-
-2. **Daily usage:** Double-click `start.bat`
-   - Starts Django backend
-   - Starts React frontend
-   - Opens both in separate windows
-
-3. **Stop servers:** Double-click `stop.bat`
-
-📖 **Detailed instructions:** See [QUICK_START.md](QUICK_START.md)
-
-### Manual Setup (Advanced)
-
-If you prefer manual control:
-
-**Prerequisites:**
-- Python 3.13+
-- Node.js 22+
-- Redis server (for Celery and Channels)
-
-### Installation
-
-**1. Backend Setup**
+### Manual Setup
 
 ```bash
-# Activate virtual environment (already created)
-venv\Scripts\activate
-
-# Migrations are already run, database is ready
-# Create a superuser for Django admin
+# Backend
+python -m venv venv
+venv\Scripts\activate          # Windows
+# source venv/bin/activate     # Linux/Mac
+pip install -r requirements.txt
+python manage.py makemigrations sensors
+python manage.py migrate
+python manage.py load_csv_data --clear
 python manage.py createsuperuser
-```
 
-**2. Frontend Setup**
-
-```bash
+# Frontend
 cd sensor-dashboard
-# Dependencies already installed
-# Ready to run
+npm install
 ```
 
-**3. Install Redis** (Windows)
-
-Download and run Redis from: https://github.com/microsoftarchive/redis/releases
-Or use Docker:
-```bash
-docker run -d -p 6379:6379 redis:latest
-```
-
----
-
-## Running the Application
-
-You need to run **5 services concurrently** (use 5 terminal windows):
-
-### Terminal 1: Django Backend
+### Running
 
 ```bash
+# Terminal 1 — Backend (http://localhost:8000)
 venv\Scripts\activate
 python manage.py runserver
-```
-→ API available at http://localhost:8000
 
-### Terminal 2: Celery Worker
-
-```bash
-venv\Scripts\activate
-celery -A sensor_backend worker -l info
-```
-→ Processes aggregation tasks
-
-### Terminal 3: Celery Beat (Scheduler)
-
-```bash
-venv\Scripts\activate
-celery -A sensor_backend beat -l info
-```
-→ Triggers periodic aggregation tasks
-
-### Terminal 4: React Frontend
-
-```bash
+# Terminal 2 — Frontend (http://localhost:5173)
 cd sensor-dashboard
 npm run dev
 ```
-→ Dashboard available at http://localhost:5173
 
-### Terminal 5: Sensor Simulator (for testing)
+## Project Structure
+
+```
+├── sensor_backend/          # Django project settings, URLs, ASGI/WSGI
+├── sensors/                 # Django app
+│   ├── models.py            # SensorReading, Aggregated tables, Anomaly
+│   ├── views.py             # REST API endpoints + sensor metadata
+│   ├── serializers.py       # DRF serializers
+│   ├── consumers.py         # WebSocket consumer
+│   ├── tasks.py             # Celery aggregation tasks
+│   └── management/commands/ # CLI commands (load_csv_data, seed, simulate, cleanup)
+├── sensor-dashboard/        # React frontend
+│   └── src/
+│       ├── pages/           # Dashboard.jsx, Analytics.jsx
+│       ├── components/      # SensorCard, SensorGauge, Sparkline, AnomalyAlert, Navigation
+│       └── services/        # api.js (Axios client), mockData.js, websocket.js
+├── context/                 # Design principles + style guide
+├── sensor_schematics/       # 5 sensor datasheets (PDF)
+├── generate_dummy_data.py   # Physics-based CSV data generator
+├── sensor_data_sample.csv   # 1M-row sample dataset (~94 MB)
+├── requirements.txt         # Python dependencies
+├── setup.bat                # One-click setup script
+├── start.bat                # Start both servers
+└── stop.bat                 # Stop both servers
+```
+
+## Features
+
+### Live Dashboard (`/`)
+
+- **12 sensor cards** each with:
+  - Plotly gauge showing current value against datasheet range
+  - 60-second sparkline chart with per-sensor color coding
+  - Status badge: NORMAL / WARNING / CRITICAL / OFFLINE
+  - Footer stats: Current, Min, Max, Avg (compact formatted)
+- **Sensor-aware status logic**:
+  - Pollutants (CO, NO₂, NH₃, TVOC, eCO₂, PM2.5, IAQ Index) — low is good, high triggers warning/critical
+  - Gas Resistance — high is good (clean air), low triggers warning
+  - Environmental (Temperature, Humidity, Pressure, Light) — mid-range normal, extremes trigger warning
+- **Anomaly alert panel** with severity indicators and timestamps
+- **Auto-polling** every 2 seconds for all 12 sensors
+
+### Historical Analytics (`/analytics`)
+
+- **Sensor selector** dropdown with name, unit, and sensor model
+- **Time range controls**: 1h, 6h, 24h, 7d, 30d, or custom date/time range
+- **Resolution selector**: Auto, 1-second, 1-minute, 1-hour
+- **Interactive Plotly chart** with:
+  - Average line (WebGL-accelerated `scattergl`)
+  - Min/Max shaded band
+  - Hover tooltips with formatted values and timestamps
+  - Zoom, pan, and mode bar controls
+- **Statistics cards**: Minimum, Maximum, Average, Std Dev, Data Points
+- **CSV export** of the currently displayed data
+
+### Data Pipeline
+
+```
+sensor_data.csv (or sample)
+    ↓  python manage.py load_csv_data --clear
+Raw SensorReading table
+    ↓  Automatic aggregation during load
+SensorAggregated1Sec  →  SensorAggregated1Min  →  SensorAggregated1Hour
+    ↓  3-sigma anomaly detection
+Anomaly table (spike, out_of_range)
+    ↓  Time-cycling replay
+Live dashboard (maps wall-clock time to CSV position via modulo)
+```
+
+### Dummy Data Generator
+
+`generate_dummy_data.py` produces realistic sensor data with:
+- Diurnal light/temperature cycles (sunrise/sunset)
+- Humidity anti-correlation with temperature
+- Weather front pressure oscillations
+- Traffic rush-hour CO/NO₂ peaks
+- Rare pollution events with exponential decay
+- Wind-driven particle dispersion effects
 
 ```bash
-venv\Scripts\activate
-python manage.py simulate_sensor_stream --duration 300
-```
-→ Simulates 12 sensors sending 60Hz data for 5 minutes
-
----
-
-## Testing the System
-
-### Step 1: Seed Historical Data
-
-```bash
-# Generate 24 hours of historical data for all 12 sensors
-python manage.py seed_sensors --hours 24 --frequency 1
+python generate_dummy_data.py --hours 24 --frequency 1 --output sensor_data.csv
 ```
 
-### Step 2: Start the Simulator
+## API Endpoints
 
-```bash
-# Simulate live 60Hz data stream
-python manage.py simulate_sensor_stream --duration 300
-```
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/sensors/ingest/` | Batch insert sensor readings |
+| GET | `/api/sensors/list/` | All 12 sensors with metadata and status |
+| GET | `/api/sensors/{id}/live/` | Last 60 seconds of 1-sec aggregated data |
+| GET | `/api/sensors/{id}/history/` | Historical data with auto-resolution |
+| GET | `/api/sensors/anomalies/` | Anomalies with severity/sensor filtering |
 
-You should see output like:
-```
-[5.0s] Sent 3600 readings (720.0 readings/sec) - Errors: 0
-```
-
-### Step 3: Check the Admin Panel
-
-Visit http://localhost:8000/admin and log in to see:
-- Raw sensor readings
-- Aggregated data (1-sec, 1-min, 1-hour)
-- Detected anomalies
-
-### Step 4: Test API Endpoints
-
-```bash
-# Get list of all sensors
-curl http://localhost:8000/api/sensors/list/
-
-# Get live data for sensor 1
-curl http://localhost:8000/api/sensors/1/live/
-
-# Get historical data
-curl "http://localhost:8000/api/sensors/1/history/?start_time=2025-01-01T00:00:00Z&end_time=2025-01-02T00:00:00Z"
-
-# Get anomalies
-curl http://localhost:8000/api/sensors/anomalies/
-```
-
-### Step 5: Test WebSocket Connection
-
-Use a WebSocket client or browser console:
-```javascript
-const ws = new WebSocket('ws://localhost:8000/ws/sensors/');
-
-ws.onopen = () => {
-  console.log('Connected');
-  ws.send(JSON.stringify({ type: 'get_latest' }));
-};
-
-ws.onmessage = (event) => {
-  const data = JSON.parse(event.data);
-  console.log('Received:', data);
-};
-```
-
----
-
-## API Documentation
-
-### Ingest Sensor Data
-
-**Endpoint:** `POST /api/sensors/ingest/`
-
-**Request Body:**
-```json
-[
-  {
-    "sensor_id": 1,
-    "timestamp": "2025-01-15T12:00:00Z",
-    "value": 45.67
-  },
-  {
-    "sensor_id": 2,
-    "timestamp": "2025-01-15T12:00:00Z",
-    "value": 52.34
-  }
-]
-```
-
-**Response:**
-```json
-{
-  "success": true,
-  "count": 2,
-  "message": "Successfully inserted 2 sensor readings"
-}
-```
-
-### Get Live Data
-
-**Endpoint:** `GET /api/sensors/{sensor_id}/live/`
-
-**Response:**
-```json
-{
-  "sensor_id": 1,
-  "data": [
-    {
-      "id": 123,
-      "sensor_id": 1,
-      "timestamp": "2025-01-15T12:00:00Z",
-      "avg": 45.67,
-      "min": 44.50,
-      "max": 46.80,
-      "std": 0.65,
-      "count": 60
-    }
-  ],
-  "count": 60
-}
-```
-
-### Get Historical Data
-
-**Endpoint:** `GET /api/sensors/{sensor_id}/history/?start_time=...&end_time=...&resolution=auto`
-
-**Query Parameters:**
-- `start_time` (required): ISO datetime
-- `end_time` (required): ISO datetime
-- `resolution` (optional): `auto`, `1sec`, `1min`, `1hour`
-
-**Auto-resolution logic:**
-- ≤1 hour → use 1-second aggregations
-- ≤24 hours → use 1-minute aggregations
-- >24 hours → use 1-hour aggregations
-
----
+**Historical data auto-resolution:**
+- ≤ 1 hour → 1-second aggregations
+- ≤ 24 hours → 1-minute aggregations
+- \> 24 hours → 1-hour aggregations
 
 ## Database Schema
 
-```sql
--- Raw sensor readings (60Hz data)
-CREATE TABLE sensor_readings (
-    id INTEGER PRIMARY KEY,
-    sensor_id INTEGER,
-    timestamp DATETIME,
-    value REAL,
-    created_at DATETIME,
-    INDEX (sensor_id, timestamp),
-    INDEX (timestamp)
-);
+**5 tables** with indexed lookups on `(sensor_id, timestamp)`:
 
--- 1-second aggregations
-CREATE TABLE sensor_aggregated_1sec (
-    id INTEGER PRIMARY KEY,
-    sensor_id INTEGER,
-    timestamp DATETIME,
-    avg REAL,
-    min REAL,
-    max REAL,
-    std REAL,
-    count INTEGER,
-    created_at DATETIME,
-    UNIQUE (sensor_id, timestamp)
-);
+| Table | Purpose | Retention |
+|-------|---------|-----------|
+| `SensorReading` | Raw readings | 7 days |
+| `SensorAggregated1Sec` | 1-second avg/min/max/std/count | 30 days |
+| `SensorAggregated1Min` | 1-minute summaries | 1 year |
+| `SensorAggregated1Hour` | 1-hour summaries | Forever |
+| `Anomaly` | Detected anomalies (spike, dropout, out_of_range) | Forever |
 
--- Anomalies
-CREATE TABLE anomalies (
-    id INTEGER PRIMARY KEY,
-    sensor_id INTEGER,
-    timestamp DATETIME,
-    anomaly_type VARCHAR(20),  -- spike, dropout, out_of_range
-    severity VARCHAR(10),       -- low, medium, high
-    value REAL,
-    expected_range_min REAL,
-    expected_range_max REAL,
-    description TEXT,
-    acknowledged BOOLEAN,
-    created_at DATETIME
-);
+## Design System
+
+The frontend follows a comprehensive dark-theme design system documented in `context/style-guide.md`:
+
+- **Dark backgrounds**: #0A0E27 (primary), #1A1F3A (secondary), #252B4A (tertiary)
+- **12-color chart palette** for distinguishing sensors
+- **Status colors**: Green (normal), Amber (warning), Red (critical)
+- **8px spacing scale** with consistent border radii
+- **Responsive**: Works on desktop (1440px+), tablet (768px), and mobile (375px)
+- **Plotly charts** use resolved hex colors (Plotly cannot read CSS custom properties)
+
+## Management Commands
+
+```bash
+# Load CSV data into all tables (raw + aggregations + anomalies)
+python manage.py load_csv_data --csv sensor_data_sample.csv --clear
+
+# Generate random test data (alternative to CSV loading)
+python manage.py seed_sensors --hours 24 --frequency 1
+
+# Simulate live 60Hz sensor stream via HTTP POST
+python manage.py simulate_sensor_stream --sensor-id 1 --duration 60
+
+# Clean up old raw readings (>7 days)
+python manage.py cleanup_old_readings
 ```
-
----
 
 ## Anomaly Detection
 
-The system uses statistical methods to detect anomalies:
+Statistical anomaly detection runs during data load:
+- **Spike detection**: 3-sigma rule on a 10-minute sliding window (600 data points)
+  - Medium severity: 3–5 standard deviations
+  - High severity: >5 standard deviations
+- **Out-of-range detection**: Values outside sensor-specific normal ranges
+- **Dropout detection**: No data received for >5 seconds (via Celery in production)
 
-**Spike Detection:**
-- Calculate rolling mean and std dev (last 10 minutes)
-- Flag if value > 3 standard deviations from mean
-- Severity:
-  - Medium: 3-5 std devs
-  - High: >5 std devs
+## Sample Data
 
-**Dropout Detection:**
-- Check if no data received for >5 seconds
-- Create high severity anomaly
+The repo includes `sensor_data_sample.csv` (~94 MB, 1M rows) for testing. The full dataset (1.5 GB, 15.7M rows) can be generated with:
 
-**Out of Range:**
-- Check against sensor-specific min/max thresholds
-- Default range: 0-100
-
----
-
-## Performance Metrics
-
-**Data Volume:**
-- Raw data: 8,640 readings/second (12 sensors × 60Hz × 12 values)
-- Batch size: 6 readings per sensor (100ms batches)
-- Request rate: ~120 HTTP POST requests/second
-- Database writes: Bulk insert ~72 readings per request
-
-**Retention Policies:**
-- Raw data: 7 days (~5.2 million readings)
-- 1-sec aggregations: 30 days (~31 million records)
-- 1-min aggregations: 1 year (~6.3 million records)
-- 1-hour aggregations: Forever
-
-**Database Size Estimates:**
-- Raw data (7 days): ~200 MB
-- 1-sec agg (30 days): ~1.2 GB
-- 1-min agg (1 year): ~250 MB
-
----
-
-## Next Steps
-
-**Frontend Development (TODO):**
-1. Create API service layer (`src/services/api.js`)
-2. Build component library:
-   - `SensorCard` - Display sensor with gauge and sparkline
-   - `SensorGauge` - Circular gauge component
-   - `LiveChart` - Real-time sparkline chart
-   - `HistoricalChart` - Large Plotly chart
-   - `AnomalyAlert` - Alert panel
-3. Implement routing:
-   - `/` → Live Dashboard (12 sensors)
-   - `/analytics` → Historical Analytics
-4. Add WebSocket integration for real-time updates
-5. Implement state management (React Context)
-6. Build data export (CSV)
-
-**Backend Enhancements (Optional):**
-- Migrate to PostgreSQL for production
-- Add user authentication
-- Implement configurable alerting (email/SMS)
-- Add ML-based anomaly detection
-- Create mobile app
-
----
-
-## Troubleshooting
-
-**Redis Connection Error:**
-```
-Error: No connection could be made because the target machine actively refused it
-```
-→ Make sure Redis is running: `redis-server` or start Docker container
-
-**Celery Not Running:**
-```
-WARNING: No nodes replied within time constraint
-```
-→ Start Celery worker in a separate terminal
-
-**No Data in Dashboard:**
-- Run the seed command: `python manage.py seed_sensors --hours 24`
-- Start the simulator: `python manage.py simulate_sensor_stream --duration 300`
-
-**WebSocket Connection Failed:**
-- Check that Daphne/Django Channels is running
-- Verify Redis is running
-- Check browser console for errors
-
----
-
-## Architecture Diagram
-
-```
-┌─────────────────┐
-│  Raspberry Pi   │
-│  (12 sensors    │
-│   @ 60Hz each)  │
-└────────┬────────┘
-         │ HTTP POST (batches)
-         ↓
-┌─────────────────────────────────┐
-│     Django REST API             │
-│  /api/sensors/ingest/           │
-└────────┬────────────────────────┘
-         │ Bulk Insert
-         ↓
-┌─────────────────────────────────┐
-│     SQLite Database             │
-│  • sensor_readings (raw 60Hz)   │
-│  • sensor_aggregated_*          │
-│  • anomalies                    │
-└────────┬────────────────────────┘
-         │
-         ↓
-┌─────────────────────────────────┐
-│   Celery (Redis broker)         │
-│  • aggregate_1sec_data (1s)     │
-│  • aggregate_1min_data (1min)   │
-│  • aggregate_1hour_data (1hr)   │
-│  • detect_anomalies             │
-│  • cleanup_old_readings         │
-└────────┬────────────────────────┘
-         │ Broadcast
-         ↓
-┌─────────────────────────────────┐
-│  Django Channels (WebSockets)   │
-│  ws://host/ws/sensors/          │
-└────────┬────────────────────────┘
-         │ Real-time stream
-         ↓
-┌─────────────────────────────────┐
-│   React Frontend (Plotly.js)    │
-│  • Live Dashboard (12 sensors)  │
-│  • Historical Analytics         │
-│  • Anomaly Alerts               │
-└─────────────────────────────────┘
+```bash
+python generate_dummy_data.py --hours 24 --frequency 1 --output sensor_data.csv
 ```
 
----
+## Future Enhancements
 
-## Project Status
-
-**Phase 1: Backend** ✅ **100% Complete**
-- Database models and migrations
-- REST API endpoints
-- Celery tasks and aggregation
-- WebSocket consumers
-- Anomaly detection
-- Management commands
-
-**Phase 2: Frontend** ⏳ **20% Complete**
-- Design system implemented
-- Dependencies installed
-- TODO: Components, routing, WebSocket integration
-
-**Phase 3: Testing** ⏳ **Pending**
-- Unit tests for aggregation logic
-- Integration tests for API endpoints
-- Load testing with simulator
-- WebSocket connection stability tests
-
-**Phase 4: Deployment** ⏳ **Pending**
-- PostgreSQL migration
-- Production settings
-- Docker containerization
-- Nginx configuration
-
----
-
-## License
-
-This project is for environmental sensor monitoring and preventative measures.
-
-## Support
-
-For issues or questions, check:
-1. Django admin panel: http://localhost:8000/admin
-2. API documentation above
-3. Check all 5 services are running (Django, Celery worker, Celery beat, Redis, Frontend)
-4. Review logs in terminal outputs
+- WebSocket live streaming (infrastructure in place: `consumers.py`, `routing.py`, `asgi.py`)
+- Celery Beat for continuous aggregation in production
+- PostgreSQL migration for high-volume deployments
+- User authentication and multi-tenancy
+- Email/SMS alerting on anomalies
+- ML-based anomaly detection (LSTM/Prophet)
+- Mobile app for field monitoring

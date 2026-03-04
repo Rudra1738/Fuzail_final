@@ -1,164 +1,110 @@
 # Quick Start Guide
 
-This guide will help you set up and run the Sensor Monitoring System with just a few clicks.
-
 ## Prerequisites
 
-Before running the setup, make sure you have:
-- **Python 3.8+** installed ([Download](https://www.python.org/downloads/))
-- **Node.js 16+** installed ([Download](https://nodejs.org/))
+- **Python 3.10+** — [Download](https://www.python.org/downloads/)
+- **Node.js 18+** — [Download](https://nodejs.org/)
 
-## First Time Setup
+## Setup
 
-### Step 1: Run Setup Script
+### Option A: Automated (Windows)
 
-Double-click `setup.bat` or run from command line:
-```batch
-setup.bat
-```
+Double-click `setup.bat`. It will:
 
-This script will:
 1. Create a Python virtual environment
-2. Install all Python dependencies (Django, Django REST Framework, etc.)
+2. Install all Python dependencies from `requirements.txt`
 3. Run database migrations
-4. Prompt you to create a Django admin superuser
-5. Optionally seed the database with 24 hours of test data
-6. Install all frontend dependencies (React, Plotly, etc.)
+4. Prompt you to create a Django admin account
+5. Optionally load sensor data from `sensor_data_sample.csv`
+6. Install frontend npm packages
 
-**Estimated time:** 3-5 minutes (depending on internet speed)
+### Option B: Manual
 
-### Step 2: Create Admin User
-
-When prompted, create an admin account:
-- Username: (your choice)
-- Email: (optional)
-- Password: (your choice)
-
-This account lets you access the Django admin panel at `http://localhost:8000/admin`
-
-## Running the Application
-
-### Start Servers
-
-Double-click `start.bat` or run:
-```batch
-start.bat
-```
-
-This will open **two new terminal windows**:
-1. **Django Backend Server** - Running on `http://localhost:8000`
-2. **React Frontend Server** - Running on `http://localhost:5173`
-
-### Access the Application
-
-Once both servers are running:
-- **Dashboard:** http://localhost:5173
-- **Django Admin:** http://localhost:8000/admin
-- **API Docs:** http://localhost:8000/api/
-
-## Stopping the Servers
-
-### Option 1: Use Stop Script
-
-Double-click `stop.bat` or run:
-```batch
-stop.bat
-```
-
-### Option 2: Close Terminal Windows
-
-Simply close the two server terminal windows that were opened by `start.bat`
-
-## Daily Workflow
-
-**After initial setup, your daily workflow is:**
-
-1. Double-click `start.bat` → Servers start
-2. Open browser to `http://localhost:5173`
-3. When done, double-click `stop.bat` → Servers stop
-
-## Troubleshooting
-
-### Port Already in Use
-
-If you get "port already in use" errors:
-1. Run `stop.bat` to kill any existing servers
-2. Or change ports in configuration files:
-   - Django: `sensor_backend/settings.py` (default: 8000)
-   - React: `sensor-dashboard/vite.config.js` (default: 5173)
-
-### Virtual Environment Not Found
-
-If `start.bat` says virtual environment not found:
-- Run `setup.bat` again
-
-### Database Errors
-
-If you encounter database errors:
-```batch
-call venv\Scripts\activate.bat
-python manage.py migrate
-```
-
-### Missing Dependencies
-
-If you get import errors:
-```batch
-call venv\Scripts\activate.bat
+```bash
+# Backend
+python -m venv venv
+venv\Scripts\activate          # Windows
+# source venv/bin/activate     # Linux/Mac
 pip install -r requirements.txt
-```
+python manage.py makemigrations sensors
+python manage.py migrate
+python manage.py load_csv_data --clear
+python manage.py createsuperuser
 
-Or for frontend:
-```batch
+# Frontend
 cd sensor-dashboard
 npm install
 ```
 
-## Script Overview
+## Running
+
+### Option A: Automated (Windows)
+
+```
+start.bat      # Opens two terminal windows (Django + React)
+stop.bat       # Kills both servers
+```
+
+### Option B: Manual
+
+```bash
+# Terminal 1 — Django backend
+venv\Scripts\activate
+python manage.py runserver
+# → http://localhost:8000
+
+# Terminal 2 — React frontend
+cd sensor-dashboard
+npm run dev
+# → http://localhost:5173
+```
+
+## URLs
+
+| Service | URL |
+|---------|-----|
+| Dashboard | http://localhost:5173 |
+| Analytics | http://localhost:5173/analytics |
+| Django Admin | http://localhost:8000/admin |
+| API (sensor list) | http://localhost:8000/api/sensors/list/ |
+
+## Daily Workflow
+
+1. `start.bat` → servers start
+2. Open http://localhost:5173
+3. `stop.bat` when done
+
+## Loading Data
+
+The repo includes a 1M-row sample dataset. To load it:
+
+```bash
+venv\Scripts\activate
+python manage.py load_csv_data --clear
+```
+
+To generate a full dataset (24 hours, 15.7M rows):
+
+```bash
+python generate_dummy_data.py --hours 24 --frequency 1 --output sensor_data.csv
+python manage.py load_csv_data --csv sensor_data.csv --clear
+```
+
+## Troubleshooting
+
+| Problem | Solution |
+|---------|----------|
+| Port already in use | Run `stop.bat`, then `start.bat` |
+| Virtual environment not found | Run `setup.bat` again |
+| Database errors | `python manage.py migrate` |
+| Missing Python packages | `pip install -r requirements.txt` |
+| Missing npm packages | `cd sensor-dashboard && npm install` |
+| No data on dashboard | `python manage.py load_csv_data --clear` |
+
+## Script Reference
 
 | Script | Purpose | When to Use |
 |--------|---------|-------------|
-| `setup.bat` | First-time setup | Once, when you first clone the project |
-| `start.bat` | Start servers | Every time you want to run the app |
-| `stop.bat` | Stop servers | When you're done working |
-
-## Advanced Usage
-
-### Manual Commands
-
-If you prefer manual control:
-
-**Backend:**
-```batch
-call venv\Scripts\activate.bat
-python manage.py runserver
-```
-
-**Frontend:**
-```batch
-cd sensor-dashboard
-npm run dev
-```
-
-### Seeding More Data
-
-To add more test data:
-```batch
-call venv\Scripts\activate.bat
-python manage.py seed_sensors --hours 24 --frequency 60
-```
-
-### Simulating Live Sensor Stream
-
-To simulate a live 60Hz sensor:
-```batch
-call venv\Scripts\activate.bat
-python manage.py simulate_sensor_stream --sensor-id 1 --duration 60
-```
-
-## Need Help?
-
-- Check the main README.md for detailed documentation
-- Review CLAUDE.md for technical architecture details
-- Check Django logs in the backend terminal window
-- Check React logs in the frontend terminal window
+| `setup.bat` | First-time setup | Once after cloning |
+| `start.bat` | Start both servers | Every session |
+| `stop.bat` | Stop both servers | End of session |
