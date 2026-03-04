@@ -1,0 +1,214 @@
+.anomaly-alert-container {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-md);
+  padding: var(--spacing-md);
+}
+
+.anomaly-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-md);
+  padding-bottom: var(--spacing-sm);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.anomaly-header h3 {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.anomaly-count {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  padding: 4px 12px;
+  border-radius: var(--border-radius-sm);
+  font-size: 14px;
+  font-weight: 600;
+  font-family: var(--font-mono);
+}
+
+.anomaly-count.has-anomalies {
+  background: var(--status-warning-dim);
+  color: var(--status-warning);
+  border: 1px solid var(--status-warning-border);
+}
+
+.anomaly-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.no-anomalies {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-xl);
+  color: var(--text-secondary);
+  text-align: center;
+}
+
+.no-anomalies .checkmark {
+  font-size: 48px;
+  color: var(--status-success);
+  margin-bottom: var(--spacing-sm);
+}
+
+.no-anomalies p {
+  margin: 0;
+  font-size: 14px;
+}
+
+.anomaly-item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm);
+  border-radius: var(--border-radius-sm);
+  border-left: 3px solid;
+  transition: all var(--transition-fast);
+}
+
+.anomaly-item:hover {
+  background: var(--bg-tertiary);
+}
+
+.anomaly-item.severity-high {
+  border-left-color: var(--status-danger);
+  background: rgba(255, 71, 87, 0.05);
+}
+
+.anomaly-item.severity-medium {
+  border-left-color: var(--status-warning);
+  background: rgba(255, 184, 0, 0.05);
+}
+
+.anomaly-item.severity-low {
+  border-left-color: var(--status-success);
+  background: rgba(0, 230, 118, 0.05);
+}
+
+.anomaly-icon {
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.anomaly-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.anomaly-title {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  flex-wrap: wrap;
+}
+
+.anomaly-sensor {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+}
+
+.anomaly-type {
+  font-size: 12px;
+  color: var(--text-secondary);
+  background: var(--bg-tertiary);
+  padding: 2px 8px;
+  border-radius: var(--border-radius-sm);
+}
+
+.anomaly-details {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.anomaly-value {
+  font-family: var(--font-mono);
+  color: var(--text-primary);
+}
+
+.anomaly-time {
+  color: var(--text-secondary);
+}
+
+.anomaly-severity-badge {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  padding: 4px 8px;
+  border-radius: var(--border-radius-sm);
+  flex-shrink: 0;
+}
+
+.anomaly-severity-badge.severity-high {
+  background: var(--status-danger);
+  color: white;
+}
+
+.anomaly-severity-badge.severity-medium {
+  background: var(--status-warning);
+  color: var(--bg-primary);
+}
+
+.anomaly-severity-badge.severity-low {
+  background: var(--status-success);
+  color: var(--bg-primary);
+}
+
+.anomaly-footer {
+  margin-top: var(--spacing-md);
+  padding-top: var(--spacing-sm);
+  border-top: 1px solid var(--border-color);
+  text-align: center;
+}
+
+.view-all-btn {
+  background: transparent;
+  color: var(--chart-color-1);
+  border: 1px solid var(--chart-color-1);
+  padding: var(--spacing-xs) var(--spacing-md);
+  border-radius: var(--border-radius-sm);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.view-all-btn:hover {
+  background: var(--chart-color-1);
+  color: white;
+}
+
+/* Scrollbar styling */
+.anomaly-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.anomaly-list::-webkit-scrollbar-track {
+  background: var(--bg-tertiary);
+  border-radius: 3px;
+}
+
+.anomaly-list::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 3px;
+}
+
+.anomaly-list::-webkit-scrollbar-thumb:hover {
+  background: var(--border-color-hover);
+}
