@@ -342,15 +342,12 @@ def list_sensors(request):
     csv_min, csv_max = _get_csv_data_range()
     now = timezone.now()
 
-    # Discover all sensor IDs that have data, merged with known metadata
-    active_ids = set(
+    # Only show sensors that actually have data
+    all_ids = sorted(set(
         SensorReading.objects.values_list('sensor_id', flat=True).distinct()
     ) | set(
         SensorAggregated1Sec.objects.values_list('sensor_id', flat=True).distinct()
-    )
-
-    # Include IDs from SENSOR_METADATA so pre-configured sensors show as offline
-    all_ids = sorted(active_ids | set(SENSOR_METADATA.keys()))
+    ))
 
     for sensor_id in all_ids:
         meta = SENSOR_METADATA.get(sensor_id, {})
