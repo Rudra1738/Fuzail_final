@@ -14,16 +14,10 @@ FIELD_TO_SENSOR = {
     'Temp': 2,         # Temperature        (BME688, °C)
     'RH': 3,           # Humidity            (BME688, %RH)
     'Pressure': 4,     # Pressure            (BME688, Pa)
+    'TVOC': 5,         # Gas Resistance      (BME688, Ω)
     'IAQ': 6,          # IAQ Index           (BME688)
-    'TVOC': 10,        # TVOC                (ZMOD4410, ppb)
-    'PM': 12,          # PM2.5               (SEN5x, µg/m³)
-    # Uncomment and adjust as your hardware adds more fields:
-    # 'Light': 1,      # Light Intensity     (BH1750FVI, lx)
-    # 'Gas': 5,        # Gas Resistance      (BME688, Ω)
-    # 'CO': 7,         # CO                  (MiCS-6814, ppm)
-    # 'NO2': 8,        # NO₂                (MiCS-6814, ppm)
-    # 'NH3': 9,        # NH₃                (MiCS-6814, ppm)
-    # 'eCO2': 11,      # eCO₂               (ZMOD4410, ppm)
+    'PM': 7,           # PM2.5               (SEN50, µg/m³)
+    'LUX': 1,          # Light Intensity     (BH1750FVI, lx)
 }
 
 # Matches lines like: DATA [1] Temp:24.11 Pressure:30700.87 ...

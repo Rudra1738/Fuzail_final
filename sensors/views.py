@@ -31,12 +31,7 @@ SENSOR_METADATA = {
     4:  {"name": "Pressure",            "sensor": "BME688",     "unit": "Pa",     "min": 30000,  "max": 110000},
     5:  {"name": "Gas Resistance",      "sensor": "BME688",     "unit": "\u03a9",     "min": 1000,   "max": 500000},
     6:  {"name": "IAQ Index",           "sensor": "BME688",     "unit": "",       "min": 0,      "max": 500},
-    7:  {"name": "CO",                  "sensor": "MiCS-6814",  "unit": "ppm",    "min": 0,      "max": 1000},
-    8:  {"name": "NO\u2082",                 "sensor": "MiCS-6814",  "unit": "ppm",    "min": 0,      "max": 10},
-    9:  {"name": "NH\u2083",                 "sensor": "MiCS-6814",  "unit": "ppm",    "min": 0,      "max": 300},
-    10: {"name": "TVOC",               "sensor": "ZMOD4410",   "unit": "ppb",    "min": 0,      "max": 5000},
-    11: {"name": "eCO\u2082",               "sensor": "ZMOD4410",   "unit": "ppm",    "min": 400,    "max": 5000},
-    12: {"name": "PM2.5",              "sensor": "SEN5x",      "unit": "\u00b5g/m\u00b3",  "min": 0,      "max": 1000},
+    7:  {"name": "PM2.5",              "sensor": "SEN50",      "unit": "\u00b5g/m\u00b3",  "min": 0,      "max": 1000},
 }
 
 
