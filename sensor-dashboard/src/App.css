@@ -1,0 +1,14 @@
+.app {
+  min-height: 100vh;
+  background: var(--bg-primary);
+}
+
+/* Ensure consistent box-sizing */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
