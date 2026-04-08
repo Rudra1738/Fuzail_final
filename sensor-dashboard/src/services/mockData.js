@@ -20,16 +20,16 @@ const generateHistoricalTimestamps = (hours, intervalMinutes = 1) => {
   });
 };
 
-// Sensor configs based on actual hardware output
-// Values observed from Tera Term screenshot
+// Sensor configs based on actual hardware output and datasheets
+// baseValue/variance from Tera Term screenshot, rangeMin/rangeMax from datasheets
 const sensorConfigs = {
-  1: { name: 'Light Intensity', unit: 'lx',    baseValue: 196,   variance: 8,    minClamp: 0,    maxClamp: 65535 },
-  2: { name: 'Temperature',     unit: '°C',    baseValue: 24.5,  variance: 0.5,  minClamp: -40,  maxClamp: 85    },
-  3: { name: 'Humidity',        unit: '%RH',   baseValue: 24.2,  variance: 0.4,  minClamp: 0,    maxClamp: 100   },
-  4: { name: 'Pressure',        unit: 'Pa',    baseValue: 30705, variance: 5,    minClamp: 30000,maxClamp: 110000},
-  5: { name: 'Gas Resistance',  unit: 'Ω',     baseValue: 49800, variance: 800,  minClamp: 1000, maxClamp: 500000},
-  6: { name: 'IAQ Index',       unit: '',      baseValue: 50,    variance: 2,    minClamp: 0,    maxClamp: 500   },
-  7: { name: 'PM2.5',           unit: 'µg/m³', baseValue: 3.5,   variance: 3,    minClamp: 0,    maxClamp: 1000  },
+  1: { name: 'Light Intensity', model: 'BH1750FVI', unit: 'lx',    baseValue: 196,   variance: 2,    minClamp: 0,     maxClamp: 65535,  rangeMin: 0,     rangeMax: 65535  },
+  2: { name: 'Temperature',     model: 'BME688',    unit: '°C',    baseValue: 24.5,  variance: 0.5,  minClamp: -40,   maxClamp: 85,     rangeMin: -40,   rangeMax: 85     },
+  3: { name: 'Humidity',        model: 'BME688',    unit: '%RH',   baseValue: 24.2,  variance: 0.15, minClamp: 0,     maxClamp: 100,    rangeMin: 0,     rangeMax: 100    },
+  4: { name: 'Pressure',        model: 'BME688',    unit: 'Pa',    baseValue: 30705, variance: 5,    minClamp: 30000, maxClamp: 110000, rangeMin: 30000, rangeMax: 110000 },
+  5: { name: 'Gas Resistance',  model: 'BME688',    unit: 'Ω',     baseValue: 49800, variance: 1500, minClamp: 1000,  maxClamp: 500000, rangeMin: 1000,  rangeMax: 500000 },
+  6: { name: 'IAQ Index',       model: 'BME688',    unit: '',      baseValue: 50,    variance: 0.5,  minClamp: 0,     maxClamp: 500,    rangeMin: 0,     rangeMax: 500    },
+  7: { name: 'PM2.5',           model: 'SEN50',     unit: 'µg/m³', baseValue: 4,     variance: 4,    minClamp: 0,     maxClamp: 1000,   rangeMin: 0,     rangeMax: 1000   },
 };
 
 // Generate realistic sensor readings with slight variation
@@ -91,8 +91,13 @@ export const getMockSensorList = () => {
     sensors: ids.map(id => ({
       sensor_id: id,
       name: sensorConfigs[id].name,
+      sensor_model: sensorConfigs[id].model,
       unit: sensorConfigs[id].unit,
-      status: 'online'
+      range_min: sensorConfigs[id].rangeMin,
+      range_max: sensorConfigs[id].rangeMax,
+      status: 'online',
+      last_value: sensorConfigs[id].baseValue,
+      last_reading_time: new Date().toISOString(),
     }))
   };
 };
