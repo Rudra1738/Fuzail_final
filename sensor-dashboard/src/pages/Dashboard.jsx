@@ -16,6 +16,7 @@ function Dashboard() {
   const [backendStatus, setBackendStatus] = useState('checking');
   const [lastUpdate, setLastUpdate] = useState(null);
   const pollRef = useRef(null);
+  const sensorPollRef = useRef(null);
   const anomalyRef = useRef(null);
   const abortRef = useRef(null);
 
@@ -26,9 +27,12 @@ function Dashboard() {
     loadAnomalies();
     checkBackendHealth();
 
+    // Re-fetch sensor list every 10 seconds to detect new/removed sensors
+    sensorPollRef.current = setInterval(loadSensors, 10000);
     anomalyRef.current = setInterval(loadAnomalies, 30000);
 
     return () => {
+      if (sensorPollRef.current) clearInterval(sensorPollRef.current);
       if (anomalyRef.current) clearInterval(anomalyRef.current);
       if (pollRef.current) clearInterval(pollRef.current);
       if (abortRef.current) abortRef.current.abort();
@@ -66,16 +70,43 @@ function Dashboard() {
         ...sensor,
         id: sensor.sensor_id
       }));
-      setSensors(mappedSensors);
 
-      const initialData = {};
-      const initialValues = {};
-      mappedSensors.forEach(sensor => {
-        initialData[sensor.id] = [];
-        initialValues[sensor.id] = null;
+      // Only update if the sensor list actually changed
+      setSensors(prev => {
+        const prevIds = prev.map(s => s.id).sort().join(',');
+        const newIds = mappedSensors.map(s => s.id).sort().join(',');
+        return prevIds === newIds ? prev : mappedSensors;
       });
-      setSensorData(initialData);
-      setLatestValues(initialValues);
+
+      // Initialize data for new sensors without wiping existing data
+      setSensorData(prev => {
+        const updated = { ...prev };
+        mappedSensors.forEach(sensor => {
+          if (!(sensor.id in updated)) {
+            updated[sensor.id] = [];
+          }
+        });
+        // Remove sensors no longer active
+        const activeIds = new Set(mappedSensors.map(s => s.id));
+        Object.keys(updated).forEach(id => {
+          if (!activeIds.has(Number(id))) delete updated[id];
+        });
+        return updated;
+      });
+
+      setLatestValues(prev => {
+        const updated = { ...prev };
+        mappedSensors.forEach(sensor => {
+          if (!(sensor.id in updated)) {
+            updated[sensor.id] = null;
+          }
+        });
+        const activeIds = new Set(mappedSensors.map(s => s.id));
+        Object.keys(updated).forEach(id => {
+          if (!activeIds.has(Number(id))) delete updated[id];
+        });
+        return updated;
+      });
     } catch (error) {
       console.error('[Dashboard] Error loading sensors:', error);
     }

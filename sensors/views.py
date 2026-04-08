@@ -335,46 +335,46 @@ def get_anomalies(request):
 @api_view(['GET'])
 def list_sensors(request):
     """
-    Get list of all 12 sensors with metadata, status, and last reading.
-    Returns real sensor names, units, and ranges from datasheets.
+    Get list of active sensors with metadata, status, and last reading.
+    Only returns sensors that have sent data within the recent window.
     """
     sensors_data = []
-    csv_min, csv_max = _get_csv_data_range()
     now = timezone.now()
 
-    # Only show sensors that actually have data
-    all_ids = sorted(set(
-        SensorReading.objects.values_list('sensor_id', flat=True).distinct()
-    ) | set(
-        SensorAggregated1Sec.objects.values_list('sensor_id', flat=True).distinct()
-    ))
+    # Only show sensors with data in the last 5 minutes
+    recent_cutoff = now - timedelta(minutes=5)
 
-    for sensor_id in all_ids:
+    recent_ids = set(
+        SensorReading.objects.filter(
+            timestamp__gte=recent_cutoff
+        ).values_list('sensor_id', flat=True).distinct()
+    ) | set(
+        SensorAggregated1Sec.objects.filter(
+            timestamp__gte=recent_cutoff
+        ).values_list('sensor_id', flat=True).distinct()
+    )
+
+    for sensor_id in sorted(recent_ids):
         meta = SENSOR_METADATA.get(sensor_id, {})
 
-        # Get last reading for this sensor (from 1-sec table for speed)
+        # Get latest reading for this sensor
+        last_reading = SensorReading.objects.filter(
+            sensor_id=sensor_id
+        ).order_by('-timestamp').first()
+
         last_agg = SensorAggregated1Sec.objects.filter(
             sensor_id=sensor_id
         ).order_by('-timestamp').first()
 
-        # Determine status based on whether we have data
-        if last_agg:
-            status_str = "online"
+        if last_agg and (not last_reading or last_agg.timestamp >= last_reading.timestamp):
             last_value = last_agg.avg
             last_time = last_agg.timestamp
+        elif last_reading:
+            last_value = last_reading.value
+            last_time = last_reading.timestamp
         else:
-            last_reading = SensorReading.objects.filter(
-                sensor_id=sensor_id
-            ).order_by('-timestamp').first()
-
-            if last_reading:
-                status_str = "online"
-                last_value = last_reading.value
-                last_time = last_reading.timestamp
-            else:
-                status_str = "no_data"
-                last_value = None
-                last_time = None
+            last_value = None
+            last_time = None
 
         sensors_data.append({
             "sensor_id": sensor_id,
@@ -383,7 +383,7 @@ def list_sensors(request):
             "unit": meta.get("unit", ""),
             "range_min": meta.get("min", 0),
             "range_max": meta.get("max", 100),
-            "status": status_str,
+            "status": "online",
             "last_reading_time": last_time,
             "last_value": last_value,
         })
