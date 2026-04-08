@@ -17,7 +17,7 @@ FIELD_TO_SENSOR = {
     'TVOC': 5,         # Gas Resistance      (BME688, Ω)
     'IAQ': 6,          # IAQ Index           (BME688)
     'PM': 7,           # PM2.5               (SEN50, µg/m³)
-    'LUX': 1,          # Light Intensity     (BH1750FVI, lx)
+    'Lux': 1,          # Light Intensity     (BH1750FVI, lx)
 }
 
 # Matches lines like: DATA [1] Temp:24.11 Pressure:30700.87 ...
