@@ -26,7 +26,7 @@ const sensorConfigs = {
   1: { name: 'Light Intensity', model: 'BH1750FVI', unit: 'lx',    baseValue: 196,   variance: 2,    minClamp: 0,     maxClamp: 65535,  rangeMin: 0,     rangeMax: 65535  },
   2: { name: 'Temperature',     model: 'BME688',    unit: '°C',    baseValue: 24.5,  variance: 0.5,  minClamp: -40,   maxClamp: 85,     rangeMin: -40,   rangeMax: 85     },
   3: { name: 'Humidity',        model: 'BME688',    unit: '%RH',   baseValue: 24.2,  variance: 0.15, minClamp: 0,     maxClamp: 100,    rangeMin: 0,     rangeMax: 100    },
-  4: { name: 'Pressure',        model: 'BME688',    unit: 'Pa',    baseValue: 30705, variance: 5,    minClamp: 30000, maxClamp: 110000, rangeMin: 30000, rangeMax: 110000 },
+  4: { name: 'Pressure',        model: 'BME688',    unit: 'Pa',    baseValue: 94000, variance: 500,  minClamp: 30000, maxClamp: 110000, rangeMin: 30000, rangeMax: 110000 },
   5: { name: 'Gas Resistance',  model: 'BME688',    unit: 'Ω',     baseValue: 49800, variance: 1500, minClamp: 1000,  maxClamp: 500000, rangeMin: 1000,  rangeMax: 500000 },
   6: { name: 'IAQ Index',       model: 'BME688',    unit: '',      baseValue: 50,    variance: 0.5,  minClamp: 0,     maxClamp: 500,    rangeMin: 0,     rangeMax: 500    },
   7: { name: 'PM2.5',           model: 'SEN50',     unit: 'µg/m³', baseValue: 4,     variance: 4,    minClamp: 0,     maxClamp: 1000,   rangeMin: 0,     rangeMax: 1000   },
