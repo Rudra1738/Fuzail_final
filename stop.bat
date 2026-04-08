@@ -21,6 +21,15 @@ if errorlevel 1 (
     echo React server stopped
 )
 
+echo.
+echo [INFO] Stopping serial reader...
+taskkill /FI "WindowTitle eq Serial Reader*" /T /F >nul 2>&1
+if errorlevel 1 (
+    echo No serial reader found running
+) else (
+    echo Serial reader stopped
+)
+
 REM Also kill any remaining node and python processes that might be serving
 echo.
 echo [INFO] Cleaning up any remaining processes...
