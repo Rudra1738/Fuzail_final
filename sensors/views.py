@@ -111,8 +111,8 @@ def ingest_sensor_data(request):
 @api_view(['GET'])
 def get_live_data(request, sensor_id):
     """
-    Get the last 60 seconds of sensor data for real-time dashboard.
-    Uses time-cycling to replay CSV data as live data.
+    Get recent sensor data for real-time dashboard.
+    Tries aggregated data first, falls back to raw readings (no Celery needed).
     """
     if sensor_id < 1:
         return Response(
@@ -120,13 +120,14 @@ def get_live_data(request, sensor_id):
             status=status.HTTP_400_BAD_REQUEST
         )
 
-    csv_min, csv_max = _get_csv_data_range()
+    # Use a 10-minute window to accommodate slow sensors (e.g. 30-sec intervals)
     now = timezone.now()
+    csv_min, csv_max = _get_csv_data_range()
 
     if csv_min and csv_max:
         # Map current time to a position in the CSV data
         mapped_now = _map_to_csv_time(now, csv_min, csv_max)
-        cutoff_time = mapped_now - timedelta(seconds=60)
+        cutoff_time = mapped_now - timedelta(minutes=10)
 
         data = SensorAggregated1Sec.objects.filter(
             sensor_id=sensor_id,
@@ -134,14 +135,43 @@ def get_live_data(request, sensor_id):
             timestamp__lte=mapped_now,
         ).order_by('timestamp')
     else:
-        # Fallback: use real wall-clock time
-        cutoff_time = now - timedelta(seconds=60)
+        # Use real wall-clock time
+        cutoff_time = now - timedelta(minutes=10)
         data = SensorAggregated1Sec.objects.filter(
             sensor_id=sensor_id,
             timestamp__gte=cutoff_time
         ).order_by('timestamp')
 
     serializer = SensorAggregated1SecSerializer(data, many=True)
+
+    # If no aggregated data, fall back to raw readings (works without Celery)
+    if len(serializer.data) == 0:
+        cutoff_time = now - timedelta(minutes=10)
+        raw_data = SensorReading.objects.filter(
+            sensor_id=sensor_id,
+            timestamp__gte=cutoff_time
+        ).order_by('timestamp')
+
+        raw_serialized = [
+            {
+                "timestamp": r.timestamp.isoformat(),
+                "avg": r.value,
+                "min": r.value,
+                "max": r.value,
+                "std": 0,
+                "count": 1,
+            }
+            for r in raw_data
+        ]
+
+        latest_raw = raw_data.last()
+        return Response({
+            "sensor_id": sensor_id,
+            "data": raw_serialized,
+            "count": len(raw_serialized),
+            "latest": latest_raw.value if latest_raw else None,
+            "status": "online" if len(raw_serialized) > 0 else "offline",
+        })
 
     # Get latest value for quick access
     latest = data.last()
