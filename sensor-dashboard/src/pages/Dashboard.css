@@ -77,6 +77,33 @@
   border-color: var(--status-warning);
 }
 
+.mock-toggle {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 14px;
+  border-radius: var(--border-radius-sm);
+  border: 1px solid var(--status-success);
+  background: rgba(0, 230, 118, 0.1);
+  color: var(--status-success);
+  cursor: pointer;
+  font-family: var(--font-mono);
+  transition: all 0.2s ease;
+}
+
+.mock-toggle:hover {
+  background: rgba(0, 230, 118, 0.2);
+}
+
+.mock-toggle.mock-active {
+  border-color: var(--status-warning);
+  background: rgba(255, 184, 0, 0.15);
+  color: var(--status-warning);
+}
+
+.mock-toggle.mock-active:hover {
+  background: rgba(255, 184, 0, 0.25);
+}
+
 .dashboard-content {
   display: grid;
   grid-template-columns: 1fr 350px;

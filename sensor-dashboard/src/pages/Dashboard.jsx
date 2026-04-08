@@ -15,6 +15,7 @@ function Dashboard() {
   const [anomalies, setAnomalies] = useState([]);
   const [backendStatus, setBackendStatus] = useState('checking');
   const [lastUpdate, setLastUpdate] = useState(null);
+  const [mockMode, setMockMode] = useState(api.isMockMode());
   const pollRef = useRef(null);
   const sensorPollRef = useRef(null);
   const anomalyRef = useRef(null);
@@ -156,6 +157,19 @@ function Dashboard() {
     setBackendStatus(isHealthy ? 'online' : 'offline');
   };
 
+  const toggleMockMode = () => {
+    const newMode = !mockMode;
+    api.setMockMode(newMode);
+    setMockMode(newMode);
+    // Clear existing data and reload with new source
+    setSensors([]);
+    setSensorData({});
+    setLatestValues({});
+    loadSensors();
+    loadAnomalies();
+    checkBackendHealth();
+  };
+
   return (
     <div className="dashboard-container">
       <div className="dashboard-header">
@@ -184,6 +198,15 @@ function Dashboard() {
             <span className="status-badge">
               {lastUpdate ? lastUpdate.toLocaleTimeString() : '—'}
             </span>
+          </div>
+
+          <div className="status-item">
+            <button
+              className={`mock-toggle ${mockMode ? 'mock-active' : ''}`}
+              onClick={toggleMockMode}
+            >
+              {mockMode ? 'Mock Data' : 'Live Data'}
+            </button>
           </div>
         </div>
       </div>

@@ -7,11 +7,9 @@ import {
 } from './mockData.js';
 
 // ============================================
-// MOCK DATA MODE - Toggle for screenshots
-// Set to true to use hardcoded data for presentations
-// Set to false to use real backend API
+// MOCK DATA MODE - Toggleable at runtime
 // ============================================
-const USE_MOCK_DATA = false;
+let USE_MOCK_DATA = false;
 
 // API Base URL - change to your Django backend URL
 const API_BASE_URL = 'http://localhost:8000/api';
@@ -211,6 +209,14 @@ const api = {
       console.error('Backend health check failed:', error);
       return false;
     }
+  },
+
+  isMockMode() {
+    return USE_MOCK_DATA;
+  },
+
+  setMockMode(enabled) {
+    USE_MOCK_DATA = enabled;
   },
 };
 
