@@ -97,20 +97,65 @@ export const getMockSensorList = () => {
   };
 };
 
-// Mock live data (last 60 seconds)
+// Rolling buffers for continuous mock data (one per sensor)
+const liveBuffers = {};
+let mockTick = 0;
+
+// Generate a single new value for a sensor using smooth drift
+const generateNextValue = (sensorId) => {
+  const config = sensorConfigs[sensorId];
+  if (!config) return 0;
+  const sine = Math.sin(mockTick / 15 + sensorId) * config.variance;
+  const random = (Math.random() - 0.5) * config.variance * 0.5;
+  let value = config.baseValue + sine + random;
+
+  // Occasional PM2.5 spike
+  if (sensorId === 7 && Math.random() < 0.03) {
+    value += Math.random() * 15;
+  }
+
+  return parseFloat(Math.max(config.minClamp, Math.min(config.maxClamp, value)).toFixed(2));
+};
+
+// Mock live data — maintains a rolling buffer per sensor, appends a new point each call
 export const getMockLiveData = (sensorId) => {
   const config = sensorConfigs[sensorId];
   if (!config) return { sensor_id: sensorId, data: [], count: 0, latest: null, status: 'offline' };
 
-  const data = generateReadings(sensorId, 60, 1000);
+  // Initialize buffer with historical data on first call
+  if (!liveBuffers[sensorId]) {
+    liveBuffers[sensorId] = generateReadings(sensorId, 59, 1000);
+  }
+
+  mockTick++;
+
+  // Append a new data point
+  const newValue = generateNextValue(sensorId);
+  liveBuffers[sensorId].push({
+    timestamp: new Date().toISOString(),
+    value: newValue,
+  });
+
+  // Keep only the last 60 points
+  if (liveBuffers[sensorId].length > 60) {
+    liveBuffers[sensorId] = liveBuffers[sensorId].slice(-60);
+  }
+
+  const data = liveBuffers[sensorId];
 
   return {
     sensor_id: sensorId,
     data: data,
     count: data.length,
-    latest: data.length > 0 ? data[data.length - 1].value : null,
+    latest: data[data.length - 1].value,
     status: 'online'
   };
+};
+
+// Reset buffers when switching modes
+export const resetMockBuffers = () => {
+  Object.keys(liveBuffers).forEach(k => delete liveBuffers[k]);
+  mockTick = 0;
 };
 
 // Mock historical data

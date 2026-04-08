@@ -3,7 +3,8 @@ import {
   getMockSensorList,
   getMockLiveData,
   getMockHistoricalData,
-  getMockAnomalies
+  getMockAnomalies,
+  resetMockBuffers
 } from './mockData.js';
 
 // ============================================
@@ -217,6 +218,7 @@ const api = {
 
   setMockMode(enabled) {
     USE_MOCK_DATA = enabled;
+    if (enabled) resetMockBuffers();
   },
 };
 
