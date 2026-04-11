@@ -25,11 +25,36 @@ function SensorCard({
   latestValue,
   min = 0,
   max = 100,
+  onClick,
+  alertThresholds,
+  draggable,
+  onDragStart,
+  onDragEnter,
+  onDragEnd,
+  onDragOver,
 }) {
   const [status, setStatus] = useState('normal');
   const [lastUpdate, setLastUpdate] = useState(null);
 
   const displayName = sensorName || `Sensor ${sensorId}`;
+
+  // Calculate trend from liveData: compare avg of last 5 vs previous 5
+  const getTrend = () => {
+    if (!liveData || liveData.length < 6) return 'stable';
+    const recent = liveData.slice(-5);
+    const previous = liveData.slice(-10, -5);
+    if (previous.length === 0) return 'stable';
+    const recentAvg = recent.reduce((s, d) => s + d.value, 0) / recent.length;
+    const prevAvg = previous.reduce((s, d) => s + d.value, 0) / previous.length;
+    const diff = recentAvg - prevAvg;
+    // Use 0.5% of range as threshold for "stable"
+    const threshold = (max - min) * 0.005 || 0.1;
+    if (diff > threshold) return 'rising';
+    if (diff < -threshold) return 'falling';
+    return 'stable';
+  };
+
+  const trend = getTrend();
 
   // Determine sensor status based on value and sensor type
   useEffect(() => {
@@ -38,6 +63,25 @@ function SensorCard({
       return;
     }
 
+    // If alertThresholds are configured for this sensor, use them
+    if (alertThresholds) {
+      const { critical, high, medium, low } = alertThresholds;
+      if (critical !== undefined && critical !== '' && latestValue > Number(critical)) {
+        setStatus('critical');
+      } else if (high !== undefined && high !== '' && latestValue > Number(high)) {
+        setStatus('warning');
+      } else if (medium !== undefined && medium !== '' && latestValue > Number(medium)) {
+        setStatus('warning');
+      } else if (low !== undefined && low !== '' && latestValue > Number(low)) {
+        setStatus('normal');
+      } else {
+        setStatus('normal');
+      }
+      setLastUpdate(new Date());
+      return;
+    }
+
+    // Fallback: original percentage-based logic
     // Clamp percentage to 0-100 for sensors whose values can exceed metadata range
     const rawPct = ((latestValue - min) / (max - min)) * 100;
     const percentage = Math.max(0, Math.min(100, rawPct));
@@ -59,7 +103,7 @@ function SensorCard({
     }
 
     setLastUpdate(new Date());
-  }, [latestValue, min, max, sensorName]);
+  }, [latestValue, min, max, sensorName, alertThresholds]);
 
   const getStatusColor = () => {
     switch (status) {
@@ -132,7 +176,16 @@ function SensorCard({
   };
 
   return (
-    <div className="sensor-card">
+    <div
+      className="sensor-card"
+      onClick={onClick}
+      style={onClick && !draggable ? { cursor: 'pointer' } : undefined}
+      draggable={draggable ? 'true' : undefined}
+      onDragStart={onDragStart}
+      onDragEnter={onDragEnter}
+      onDragEnd={onDragEnd}
+      onDragOver={onDragOver}
+    >
       <div className="sensor-card-header">
         <div className="sensor-title">
           <span className="sensor-id">{displayName}</span>
@@ -193,6 +246,12 @@ function SensorCard({
             {liveData.length > 0
               ? formatCompact(liveData.reduce((sum, d) => sum + d.value, 0) / liveData.length)
               : 'N/A'}
+          </span>
+        </div>
+        <div className="stat">
+          <span className="stat-label">Trend</span>
+          <span className={`stat-value trend-indicator trend-${trend}`}>
+            {trend === 'rising' ? '\u25B2' : trend === 'falling' ? '\u25BC' : '\u25BA'}
           </span>
         </div>
       </div>

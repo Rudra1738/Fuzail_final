@@ -84,7 +84,7 @@
 
 .sensor-card-footer {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   gap: 4px;
   padding-top: var(--spacing-sm);
   border-top: 1px solid var(--border-color);
@@ -120,6 +120,42 @@
   margin-left: 1px;
 }
 
+/* Trend indicator */
+.trend-indicator {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.trend-rising {
+  color: var(--status-success);
+}
+
+.trend-falling {
+  color: var(--status-danger);
+}
+
+.trend-stable {
+  color: var(--text-secondary);
+}
+
+/* Drag-to-reorder */
+.sensor-card[draggable="true"] {
+  cursor: grab;
+}
+
+.sensor-card[draggable="true"]:active {
+  cursor: grabbing;
+}
+
+.sensor-card.dragging {
+  opacity: 0.5;
+  border-color: var(--accent, #4F7BFF);
+}
+
+.sensor-card.drag-over {
+  border-top: 3px solid var(--accent, #4F7BFF);
+}
+
 /* Responsive adjustments */
 @media (max-width: 768px) {
   .sensor-card {
@@ -127,7 +163,7 @@
   }
 
   .sensor-card-footer {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(3, 1fr);
     gap: var(--spacing-xs);
   }
 

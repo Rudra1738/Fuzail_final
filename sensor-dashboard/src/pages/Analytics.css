@@ -26,6 +26,94 @@
   margin: 0;
 }
 
+.analytics-header-actions {
+  display: flex;
+  gap: var(--spacing-sm);
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+/* Data mode toggle (mirrored from Dashboard) */
+.analytics-container .data-mode-toggle {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 14px;
+  border-radius: var(--border-radius-sm);
+  border: 1px solid var(--status-success);
+  background: rgba(0, 230, 118, 0.1);
+  color: var(--status-success);
+  cursor: pointer;
+  font-family: var(--font-mono);
+  transition: all 0.2s ease;
+}
+
+.analytics-container .data-mode-toggle:hover {
+  background: rgba(0, 230, 118, 0.2);
+}
+
+.analytics-container .data-mode-toggle.extrapolated-active {
+  border-color: var(--status-warning);
+  background: rgba(255, 184, 0, 0.15);
+  color: var(--status-warning);
+}
+
+.analytics-container .data-mode-toggle.extrapolated-active:hover {
+  background: rgba(255, 184, 0, 0.25);
+}
+
+/* Sensor quick-switch chips */
+.sensor-chips {
+  display: flex;
+  gap: var(--spacing-sm);
+  flex-wrap: wrap;
+  margin-bottom: var(--spacing-xl);
+  padding: var(--spacing-sm) 0;
+}
+
+.sensor-chip {
+  padding: 6px 16px;
+  border-radius: 999px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  font-family: var(--font-family);
+  white-space: nowrap;
+}
+
+.sensor-chip:hover {
+  border-color: var(--border-color-hover);
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+}
+
+.sensor-chip.active {
+  background: var(--accent-primary);
+  color: white;
+  border-color: var(--accent-primary);
+}
+
+.sensor-chip.active:hover {
+  background: var(--accent-primary-hover);
+  border-color: var(--accent-primary-hover);
+}
+
+/* PDF export button variant */
+.export-btn-pdf {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+}
+
+.export-btn-pdf:hover:not(:disabled) {
+  background: var(--bg-hover);
+  border-color: var(--border-color-hover);
+  transform: translateY(-1px);
+}
+
 .export-btn {
   background: var(--chart-color-1);
   color: white;
@@ -233,6 +321,11 @@
     font-size: 24px;
   }
 
+  .analytics-header-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
   .analytics-controls {
     flex-direction: column;
   }
@@ -248,5 +341,14 @@
   .chart-container {
     padding: var(--spacing-sm);
     min-height: 400px;
+  }
+
+  .sensor-chips {
+    gap: var(--spacing-xs);
+  }
+
+  .sensor-chip {
+    font-size: 12px;
+    padding: 4px 12px;
   }
 }

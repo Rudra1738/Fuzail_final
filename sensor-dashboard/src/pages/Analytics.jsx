@@ -11,6 +11,7 @@ const PLOTLY_COLORS = {
   bgTertiary: '#252B4A',
   borderColor: 'rgba(160, 168, 192, 0.1)',
   line: '#4F7BFF',
+  anomaly: '#FF4757',
   fontPrimary: '-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif',
 };
 
@@ -26,6 +27,8 @@ function Analytics() {
   const [historicalData, setHistoricalData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [stats, setStats] = useState(null);
+  const [anomalies, setAnomalies] = useState([]);
+  const [extrapolatedMode, setExtrapolatedMode] = useState(api.isMockMode());
   const [customRange, setCustomRange] = useState({
     start: '',
     end: ''
@@ -33,11 +36,13 @@ function Analytics() {
 
   useEffect(() => {
     loadSensors();
+    loadAnomalies();
   }, []);
 
   useEffect(() => {
     if (selectedSensor) {
       loadHistoricalData();
+      loadAnomalies();
     }
   }, [selectedSensor, timeRange, resolution]);
 
@@ -55,6 +60,35 @@ function Analytics() {
     } catch (error) {
       console.error('[Analytics] Error loading sensors:', error);
     }
+  };
+
+  const loadAnomalies = async () => {
+    try {
+      const response = await api.getAnomalies({ sensor_id: selectedSensor });
+      setAnomalies(response.anomalies || []);
+    } catch (error) {
+      console.error('[Analytics] Error loading anomalies:', error);
+    }
+  };
+
+  const toggleExtrapolatedMode = () => {
+    const newMode = !extrapolatedMode;
+    api.setMockMode(newMode);
+    setExtrapolatedMode(newMode);
+    setHistoricalData([]);
+    setStats(null);
+    setAnomalies([]);
+    loadSensors();
+    loadAnomalies();
+    if (selectedSensor) {
+      // Small delay to let mock mode settle
+      setTimeout(() => loadHistoricalData(), 50);
+    }
+  };
+
+  const refreshData = () => {
+    loadHistoricalData();
+    loadAnomalies();
   };
 
   const getSelectedSensorMeta = () => {
@@ -142,7 +176,7 @@ function Analytics() {
 
     const meta = getSelectedSensorMeta();
 
-    return [
+    const traces = [
       // Min trace first (bottom of the band)
       {
         type: 'scatter',
@@ -179,6 +213,42 @@ function Analytics() {
         hovertemplate: `<b>%{y:,.2f}${meta.unit ? ' ' + meta.unit : ''}</b><br>%{x|%Y-%m-%d %H:%M:%S}<extra></extra>`
       },
     ];
+
+    // Add anomaly markers if any match the selected sensor and time range
+    const sensorAnomalies = anomalies.filter(a => a.sensor_id === selectedSensor);
+    if (sensorAnomalies.length > 0) {
+      const chartStart = new Date(timestamps[0]).getTime();
+      const chartEnd = new Date(timestamps[timestamps.length - 1]).getTime();
+      const visibleAnomalies = sensorAnomalies.filter(a => {
+        const t = new Date(a.timestamp).getTime();
+        return t >= chartStart && t <= chartEnd;
+      });
+
+      if (visibleAnomalies.length > 0) {
+        traces.push({
+          type: 'scatter',
+          mode: 'markers',
+          name: 'Anomalies',
+          x: visibleAnomalies.map(a => a.timestamp),
+          y: visibleAnomalies.map(a => a.value),
+          marker: {
+            color: PLOTLY_COLORS.anomaly,
+            size: 12,
+            symbol: 'diamond',
+            line: { color: '#fff', width: 1.5 }
+          },
+          hovertemplate: visibleAnomalies.map(a =>
+            `<b>Anomaly: ${a.anomaly_type}</b><br>` +
+            `Severity: ${a.severity}<br>` +
+            `Value: ${a.value}${meta.unit ? ' ' + meta.unit : ''}<br>` +
+            `${a.description || ''}<br>` +
+            `%{x|%Y-%m-%d %H:%M:%S}<extra></extra>`
+          ),
+        });
+      }
+    }
+
+    return traces;
   };
 
   const meta = getSelectedSensorMeta();
@@ -251,6 +321,91 @@ function Analytics() {
     window.URL.revokeObjectURL(url);
   };
 
+  const exportPDF = () => {
+    if (!historicalData || historicalData.length === 0) return;
+
+    const meta = getSelectedSensorMeta();
+    const sensorName = meta.name || `Sensor ${selectedSensor}`;
+    const unit = meta.unit || '';
+
+    const rows = historicalData.map(d => `
+      <tr>
+        <td>${new Date(d.timestamp).toLocaleString()}</td>
+        <td>${d.avg ?? d.value ?? ''}</td>
+        <td>${d.min ?? ''}</td>
+        <td>${d.max ?? ''}</td>
+        <td>${d.std ?? ''}</td>
+        <td>${d.count ?? ''}</td>
+      </tr>
+    `).join('');
+
+    const statsHtml = stats ? `
+      <div class="stats-section">
+        <h2>Statistical Summary</h2>
+        <table class="stats-table">
+          <tr><td><strong>Minimum</strong></td><td>${stats.min.toFixed(2)}${unit ? ' ' + unit : ''}</td></tr>
+          <tr><td><strong>Maximum</strong></td><td>${stats.max.toFixed(2)}${unit ? ' ' + unit : ''}</td></tr>
+          <tr><td><strong>Average</strong></td><td>${stats.avg.toFixed(2)}${unit ? ' ' + unit : ''}</td></tr>
+          <tr><td><strong>Std Dev</strong></td><td>${stats.std.toFixed(2)}${unit ? ' ' + unit : ''}</td></tr>
+          <tr><td><strong>Data Points</strong></td><td>${stats.count.toLocaleString()}</td></tr>
+        </table>
+      </div>
+    ` : '';
+
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>${sensorName} - Sensor Report</title>
+        <style>
+          body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #fff; color: #1a1a2e; margin: 0; padding: 32px; }
+          h1 { font-size: 24px; margin-bottom: 4px; color: #1a1a2e; }
+          .subtitle { font-size: 14px; color: #666; margin-bottom: 24px; }
+          h2 { font-size: 18px; margin-top: 24px; margin-bottom: 12px; color: #333; }
+          table { border-collapse: collapse; width: 100%; margin-bottom: 24px; font-size: 13px; }
+          th, td { border: 1px solid #ddd; padding: 8px 12px; text-align: left; }
+          th { background: #f4f4f8; font-weight: 600; }
+          tr:nth-child(even) { background: #fafafe; }
+          .stats-table { width: auto; }
+          .stats-table td { border: none; padding: 4px 16px 4px 0; }
+          .stats-section { margin-bottom: 24px; }
+          @media print { body { padding: 16px; } }
+        </style>
+      </head>
+      <body>
+        <h1>${sensorName}${meta.sensor_model ? ' (' + meta.sensor_model + ')' : ''}</h1>
+        <p class="subtitle">Time Range: ${timeRange} | Resolution: ${resolution} | Exported: ${new Date().toLocaleString()}</p>
+        ${statsHtml}
+        <h2>Data Table</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Timestamp</th>
+              <th>Value${unit ? ' (' + unit + ')' : ''}</th>
+              <th>Min</th>
+              <th>Max</th>
+              <th>Std</th>
+              <th>Count</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rows}
+          </tbody>
+        </table>
+      </body>
+      </html>
+    `;
+
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      printWindow.document.write(htmlContent);
+      printWindow.document.close();
+      printWindow.onload = () => {
+        printWindow.print();
+      };
+    }
+  };
+
   const formatStat = (val) => {
     if (val === null || val === undefined) return 'N/A';
     if (Math.abs(val) >= 1000) return Math.round(val).toLocaleString('en-US');
@@ -265,9 +420,23 @@ function Analytics() {
           <h1>Historical Analytics</h1>
           <p className="analytics-subtitle">Analyze sensor data trends and patterns</p>
         </div>
-        <button className="export-btn" onClick={exportCSV} disabled={!historicalData || historicalData.length === 0}>
-          Export CSV
-        </button>
+        <div className="analytics-header-actions">
+          <button
+            className={`data-mode-toggle ${extrapolatedMode ? 'extrapolated-active' : ''}`}
+            onClick={toggleExtrapolatedMode}
+          >
+            {extrapolatedMode ? 'Extrapolated Data' : 'Live Data'}
+          </button>
+          <button className="export-btn" onClick={refreshData} disabled={loading}>
+            Refresh
+          </button>
+          <button className="export-btn" onClick={exportCSV} disabled={!historicalData || historicalData.length === 0}>
+            Export CSV
+          </button>
+          <button className="export-btn export-btn-pdf" onClick={exportPDF} disabled={!historicalData || historicalData.length === 0}>
+            Export PDF
+          </button>
+        </div>
       </div>
 
       <div className="analytics-controls">
@@ -337,6 +506,20 @@ function Analytics() {
           </select>
         </div>
       </div>
+
+      {sensors.length > 0 && (
+        <div className="sensor-chips">
+          {sensors.map(sensor => (
+            <button
+              key={sensor.id}
+              className={`sensor-chip ${sensor.id === selectedSensor ? 'active' : ''}`}
+              onClick={() => setSelectedSensor(sensor.id)}
+            >
+              {sensor.name || `Sensor ${sensor.id}`}
+            </button>
+          ))}
+        </div>
+      )}
 
       {stats && (
         <div className="stats-grid">

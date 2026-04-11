@@ -212,6 +212,23 @@ const api = {
     }
   },
 
+  /**
+   * Get serial port connection status
+   * GET /api/sensors/serial-status/
+   */
+  async getSerialStatus() {
+    if (USE_MOCK_DATA) {
+      return { connected: false, port: null };
+    }
+
+    try {
+      const response = await apiClient.get('/sensors/serial-status/');
+      return response.data;
+    } catch (error) {
+      return { connected: false, port: null };
+    }
+  },
+
   isMockMode() {
     return USE_MOCK_DATA;
   },
