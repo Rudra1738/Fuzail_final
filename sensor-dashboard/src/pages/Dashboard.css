@@ -77,7 +77,7 @@
   border-color: var(--status-warning);
 }
 
-.mock-toggle {
+.data-mode-toggle {
   font-size: 12px;
   font-weight: 600;
   padding: 4px 14px;
@@ -90,17 +90,17 @@
   transition: all 0.2s ease;
 }
 
-.mock-toggle:hover {
+.data-mode-toggle:hover {
   background: rgba(0, 230, 118, 0.2);
 }
 
-.mock-toggle.mock-active {
+.data-mode-toggle.extrapolated-active {
   border-color: var(--status-warning);
   background: rgba(255, 184, 0, 0.15);
   color: var(--status-warning);
 }
 
-.mock-toggle.mock-active:hover {
+.data-mode-toggle.extrapolated-active:hover {
   background: rgba(255, 184, 0, 0.25);
 }
 
@@ -112,7 +112,7 @@
 
 .sensor-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap: var(--spacing-md);
   align-content: start;
 }
@@ -123,6 +123,9 @@
   height: fit-content;
   max-height: calc(100vh - 120px);
   overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
 }
 
 /* Responsive Design */
@@ -147,7 +150,7 @@
   }
 
   .sensor-grid {
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   }
 }
 

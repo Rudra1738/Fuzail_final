@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import SensorCard from '../components/SensorCard';
 import AnomalyAlert from '../components/AnomalyAlert';
+import AlertLevels from '../components/AlertLevels';
 import api from '../services/api';
 import './Dashboard.css';
 
@@ -15,7 +16,7 @@ function Dashboard() {
   const [anomalies, setAnomalies] = useState([]);
   const [backendStatus, setBackendStatus] = useState('checking');
   const [lastUpdate, setLastUpdate] = useState(null);
-  const [mockMode, setMockMode] = useState(api.isMockMode());
+  const [extrapolatedMode, setExtrapolatedMode] = useState(api.isMockMode());
   const pollRef = useRef(null);
   const sensorPollRef = useRef(null);
   const anomalyRef = useRef(null);
@@ -157,10 +158,10 @@ function Dashboard() {
     setBackendStatus(isHealthy ? 'online' : 'offline');
   };
 
-  const toggleMockMode = () => {
-    const newMode = !mockMode;
+  const toggleExtrapolatedMode = () => {
+    const newMode = !extrapolatedMode;
     api.setMockMode(newMode);
-    setMockMode(newMode);
+    setExtrapolatedMode(newMode);
     // Clear existing data and reload with new source
     setSensors([]);
     setSensorData({});
@@ -202,10 +203,10 @@ function Dashboard() {
 
           <div className="status-item">
             <button
-              className={`mock-toggle ${mockMode ? 'mock-active' : ''}`}
-              onClick={toggleMockMode}
+              className={`data-mode-toggle ${extrapolatedMode ? 'extrapolated-active' : ''}`}
+              onClick={toggleExtrapolatedMode}
             >
-              {mockMode ? 'Mock Data' : 'Live Data'}
+              {extrapolatedMode ? 'Extrapolated Data' : 'Live Data'}
             </button>
           </div>
         </div>
@@ -230,6 +231,7 @@ function Dashboard() {
 
         <div className="anomaly-panel">
           <AnomalyAlert anomalies={anomalies} sensorMetadata={sensors} />
+          <AlertLevels sensors={sensors} />
         </div>
       </div>
     </div>
